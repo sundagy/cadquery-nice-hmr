@@ -36,6 +36,6 @@ npm run dev
 * [CadQuery](https://github.com/CadQuery/cadquery)
 * [Cheatsheet](https://cadquery.readthedocs.io/en/latest/_static/cadquery_cheatsheet.html)
 * [Examples](https://cadquery.readthedocs.io/en/latest/examples.html)
-* [<model-viewer>](https://modelviewer.dev/)
+* [\<model-viewer\>](https://modelviewer.dev/)
 * [Vite](https://vite.dev/)
 
