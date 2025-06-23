@@ -2,7 +2,7 @@
 
 You don't need to bother with slow Jupyter server and other heavy things, just create geometry in any Python IDE convenient for you and immediately admire the result in your browser, even without reloading the entire page!
 
-Use the powerful [<model-viewer>](https://modelviewer.dev/docs/) API to customization your scene environment.
+Use the powerful [\<model-viewer\> API](https://modelviewer.dev/docs/) to customization your scene environment.
 
 ![img.png](img.png)
 
