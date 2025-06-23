@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Model Viewer</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #viewer {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <model-viewer
+      src="model.glb"
+      auto-rotate
+      camera-controls
+      id="viewer"
+      touch-action="pan-y"
+      exposure="1"
+      skybox-image="spruit_sunrise.jpg"
+    >
+      <div class="controls glass">
+                    <div>
+                      <label for="neutral">Neutral Lighting: </label>
+                      <input id="neutral" type="checkbox" checked="true">
+                    </div>
+                  </div>
+    </model-viewer>
+
+    <script>
+      (() => {
+        const modelViewer = document.querySelector('#viewer');
+        const checkbox = document.querySelector('#neutral');
+
+        checkbox.addEventListener('change', () => {
+          modelViewer.environmentImage = checkbox.checked ? '' : 'legacy';
+        });
+      })();
+    </script>
+
+<script type="module">
+  const viewer = document.getElementById('viewer');
+  if (import.meta.hot) {
+    import.meta.hot.on('model-update', () => {
+      console.log('🔁 model.glb changed');
+      viewer.src = '/model.glb?cb=' + Date.now();  // форсируем перезагрузку модели
+    });
+  }
+</script>
+
+  </body>
+</html>
