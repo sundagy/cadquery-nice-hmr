@@ -1,33 +1,37 @@
-from cadquery import Workplane, exporters
-import trimesh
+import cadquery as cq
+from utils import exportModel
 
-# Основной блок
-base = Workplane("XY").box(60, 40, 10)
+# Параметры профиля трубы
+tube_width = 0.2       # внешняя ширина трубы
+wall_thickness = 0.01    # толщина стенки
 
-# Сквозное отверстие (на верхней грани)
-base = base.faces(">Z").workplane().hole(10)
+# Координаты 4-х точек (замкнутый контур)
+points = [
+    (0, 0, 0),
+    (10, 0, 0),
+    (12, 0, 10),
+    (0, 0, 10),
+    (0, 0, 0)
+]
 
-# Вертикальная стенка
-wall = Workplane("XY").center(0, -15).box(60, 2, 20).translate((0, 0, 10))
+def make_perimetr():
+    # 3-D-путь (Wire)
+    path = cq.Workplane().polyline(points)
 
-# Ребра
-ribs = (
-    Workplane("XY")
-    .pushPoints([(-25, -20), (25, -20)])
-    .box(2, 10, 15)
-    .translate((0, 0, 10))
-)
+    # Workplane с двумя прямоугольниками → после consolidateWires на стеке остаётся 1 внешний и 1 внутренний wire
+    profile_wp = (
+        cq.Workplane("YZ")
+        .rect(tube_width, tube_width)                                   # внешний
+        .rect(tube_width - 2 * wall_thickness,                          # внутренний
+              tube_width - 2 * wall_thickness)
+        .consolidateWires()                                             # объединяет контуры
+    )
 
-# Объединение
-model = base.union(wall).union(ribs)
+    solid = profile_wp.sweep(path, isFrenet=True)
+    return solid
 
+result = make_perimetr()
 
-# Фаски
-model = (model.edges("|X or |Y or |Z").chamfer(0.2))
+result = result.union(cq.Workplane("XY").box(1, 1, 1))
 
-
-exporters.export(model, "model.stl")
-
-# Экспорт в .glb
-mesh = trimesh.load("model.stl")
-mesh.export("model-app/public/model.glb")
+exportModel(result)
