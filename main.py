@@ -32,6 +32,6 @@ def make_perimetr():
 
 result = make_perimetr()
 
-result = result.union(cq.Workplane("XY").box(1, 1, 1))
+#result = result.union(cq.Workplane("XY").box(1, 1, 1))
 
 exportModel(result)
