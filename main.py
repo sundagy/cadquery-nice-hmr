@@ -1,3 +1,4 @@
+from typing import List
 import cadquery as cq
 from utils import exportModel
 
@@ -14,24 +15,22 @@ points = [
     (0, 0, 0)
 ]
 
-def make_perimetr():
+def make_bar(points: List, size: float, thickness: float):
     # 3-D-путь (Wire)
     path = cq.Workplane().polyline(points)
 
     # Workplane с двумя прямоугольниками → после consolidateWires на стеке остаётся 1 внешний и 1 внутренний wire
     profile_wp = (
         cq.Workplane("YZ")
-        .rect(tube_width, tube_width)                                   # внешний
-        .rect(tube_width - 2 * wall_thickness,                          # внутренний
-              tube_width - 2 * wall_thickness)
+        .rect(size, size)                                   # внешний
+        .rect(size - 2 * thickness,                          # внутренний
+              size - 2 * thickness)
         .consolidateWires()                                             # объединяет контуры
     )
 
     solid = profile_wp.sweep(path, isFrenet=True)
     return solid
 
-result = make_perimetr()
-
-#result = result.union(cq.Workplane("XY").box(1, 1, 1))
+result = make_bar(points, tube_width, wall_thickness)
 
 exportModel(result)

@@ -7,9 +7,11 @@ const scene = new THREE.Scene();
 
 scene.background = new THREE.Color(0x20232a);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const makePerspectiveCamera = () => {
+    return new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+}
 
-const ortho = () => {
+const makeOrhtoCamera = () => {
     const aspect = window.innerWidth / window.innerHeight;
     const frustumSize = 20;
 
@@ -18,12 +20,48 @@ const ortho = () => {
       frustumSize * aspect / 2,   // right
       frustumSize / 2,            // top
       -frustumSize / 2,           // bottom
-      0.01,                        // near
-      100                        // far
+      0.1,                        // near
+      200                        // far
     );
-    camera.position.set(50, 50, 50);
-    camera.lookAt(0, 0, 0);
+
+    camera.updateView = () => {
+        const aspect = window.innerWidth / window.innerHeight;
+        const frustumSize = 20;
+
+        camera.left = -frustumSize * aspect / 2;
+        camera.right = frustumSize * aspect / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = -frustumSize / 2;
+
+        camera.updateProjectionMatrix();
+    }
+
+    return camera;
 }
+
+const fitViewOnModel = () => {
+        // Центровка камеры на модель
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    const fov = (camera.fov || 100) * (Math.PI / 180);
+
+    box.getSize(size);
+    box.getCenter(center);
+
+    // Подгонка камеры под размер объекта
+    const maxDim = Math.max(size.x, size.y, size.z);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+    cameraZ *= 10; // немного отступа
+
+    camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
+    camera.lookAt(center);
+
+    controls.target.copy(center);
+}
+
+const camera = makeOrhtoCamera();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -46,6 +84,15 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(5, 10, 7.5);
 scene.add(dirLight);
 
+// ✅ Сетка как в CAD
+const size = 100; // общий размер
+const divisions = 100; // шаг
+
+const gridHelper = new THREE.GridHelper(size, divisions, 0x888888, 0x444444);
+gridHelper.material.opacity = 0.5;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
+
 const axesHelper = new THREE.AxesHelper(2); // длина осей = 2
 scene.add(axesHelper);
 
@@ -54,7 +101,7 @@ new RGBELoader()
   .load('bloem_field_sunrise_2k.hdr', function (texture) {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
-    scene.background = texture;
+    //scene.background = texture;
   });
 
 let model = null
@@ -65,22 +112,8 @@ loader.load('/model.glb', (gltf) => {
 
     scene.add(model);
 
-    // Центровка камеры на модель
-    const box = new THREE.Box3().setFromObject(model);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
+    fitViewOnModel();
 
-    // Подгонка камеры под размер объекта
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraZ *= 1.5; // немного отступа
-
-    camera.position.set(center.x, center.y + cameraZ, center.z + cameraZ);
-    camera.lookAt(center);
-    controls.target.copy(center);
 }, undefined, (error) => {
   console.error(error);
 });
@@ -94,8 +127,8 @@ animate();
 
 // Обработка ресайза окна
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    camera.updateView();
+
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
@@ -104,7 +137,7 @@ if (import.meta.hot) {
 import.meta.hot.on('model-update', () => {
   loader.load('model.glb?cb=' + Date.now(), (gltf) => {
 
-      // удаляем предыдущие
+    // удаляем предыдущие
     scene.remove(model);
 
     model = gltf.scene;
